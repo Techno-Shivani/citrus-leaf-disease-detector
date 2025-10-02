@@ -1,10 +1,13 @@
 import streamlit as st
+import numpy as np
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
 from PIL import Image
 
 # ================== PAGE CONFIG ==================
 st.set_page_config(page_title="Citrus Leaf Disease Detector", layout="wide")
 
-# ================== BACKGROUND IMAGE ==================
+# ================== BACKGROUND ==================
 st.markdown(
     """
     <style>
@@ -14,22 +17,22 @@ st.markdown(
         background-position: center;
         background-attachment: fixed;
     }
-    .big-font {
-        font-size:22px !important;
-        font-weight: bold;
-        color: #2E8B57;
-    }
-    .solution-font {
-        font-size:20px !important;
-        color: #FF8C00;
-        font-weight: bold;
-    }
-    .menu-title {
-        font-size:30px !important;
+    .title {
+        font-size: 42px;
         font-weight: bold;
         color: #006400;
         text-align: center;
-        text-shadow: 2px 2px 4px #cce;
+        text-shadow: 2px 2px 6px #99ff99;
+    }
+    .subtitle {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2E8B57;
+    }
+    .solution {
+        font-size: 22px;
+        font-weight: bold;
+        color: #FF8C00;
     }
     </style>
     """,
@@ -37,15 +40,26 @@ st.markdown(
 )
 
 # ================== TITLE ==================
-st.markdown("<h1 class='menu-title'>🍃 Citrus Leaf Disease Detector 🍃</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='title'>🍃 Citrus Leaf Disease Detector 🍃</h1>", unsafe_allow_html=True)
 
-# ================== MENU ==================
-menu = ["Black Spot", "Canker", "Melanose", "Greening", "Healthy"]
-choice = st.sidebar.radio("📌 Select a Disease", menu)
+# ================== LOAD MODEL ==================
+@st.cache_resource
+def load_my_model():
+    return load_model("citrus_model.keras")
 
-# ================== DISEASE DATA ==================
+model = load_my_model()
+
+# Labels
+labels = ["Black spot", "Melanose", "Canker", "Greening", "Healthy"]
+
+# ================== SIDEBAR MENU ==================
+st.sidebar.header("📌 Disease Information")
+menu = ["Black spot", "Canker", "Melanose", "Greening", "Healthy"]
+choice = st.sidebar.radio("Select a disease", menu)
+
+# Disease Info
 disease_data = {
-    "Black Spot": {
+    "Black spot": {
         "image": "black_spot.jpg",
         "about": "Black spot causes dark circular lesions on citrus leaves and fruits.",
         "solution": "Spray copper-based fungicides and remove infected leaves immediately."
@@ -72,16 +86,34 @@ disease_data = {
     }
 }
 
-# ================== DISPLAY DATA ==================
-data = disease_data[choice]
+# Show sidebar disease info
+st.sidebar.image(disease_data[choice]["image"], caption=f"{choice} Example", use_column_width=True)
+st.sidebar.markdown(f"<p class='subtitle'>🌿 About:</p>", unsafe_allow_html=True)
+st.sidebar.write(disease_data[choice]["about"])
+st.sidebar.markdown(f"<p class='solution'>💡 Solution:</p>", unsafe_allow_html=True)
+st.sidebar.write(disease_data[choice]["solution"])
 
-col1, col2 = st.columns([1, 2])
+# ================== MAIN APP - UPLOAD + PREDICTION ==================
+st.markdown("### 📤 Upload a Citrus Leaf Image for Prediction")
 
-with col1:
-    st.image(Image.open(data["image"]), caption=f"{choice} Example", width=350)
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
-with col2:
-    st.markdown(f"<p class='big-font'>🌿 About:</p>", unsafe_allow_html=True)
-    st.write(data["about"])
-    st.markdown(f"<p class='solution-font'>💡 Solution:</p>", unsafe_allow_html=True)
-    st.write(data["solution"])
+if uploaded_file is not None:
+    img = Image.open(uploaded_file).convert("RGB")
+    st.image(img, caption="Uploaded Image", use_column_width=True)
+
+    # Preprocess
+    img_resized = img.resize((224, 224))  # same size as model training
+    img_array = image.img_to_array(img_resized) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+
+    # Predict
+    preds = model.predict(img_array)[0]
+    pred_class = labels[np.argmax(preds)]
+    confidence = np.max(preds) * 100
+
+    st.success(f"✅ Prediction: **{pred_class}** ({confidence:.2f}%)")
+
+    # Show bar chart of all probabilities
+    st.markdown("### 📊 Prediction Confidence")
+    st.bar_chart(dict(zip(labels, preds)))
