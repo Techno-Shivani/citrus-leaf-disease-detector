@@ -5,12 +5,12 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from PIL import Image
 
-# Load model and labels
+# ------------------ LOAD MODEL AND LABELS ------------------
 model = load_model("citrus_model.keras")
 with open("class_labels.txt") as f:
     labels = [line.strip() for line in f]
 
-# Function to set background
+# ------------------ BACKGROUND IMAGE ------------------
 def get_base64(bin_file):
     with open(bin_file, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -31,6 +31,7 @@ def set_background(jpg_file):
         padding: 20px;
     }}
 
+    /* Sidebar Heading */
     [data-testid="stSidebar"] h2 {{
         color: #ffff33; /* Yellow Glow */
         font-size: 24px !important;
@@ -38,16 +39,16 @@ def set_background(jpg_file):
         font-weight: bold;
     }}
 
-    /* Sidebar labels - white with glow */
+    /* Sidebar Radio Buttons */
     [data-testid="stSidebar"] label {{
-        color: white !important;   
-        font-size: 18px !important;  
+        color: white !important;
+        font-size: 18px !important;
         font-weight: bold !important;
         text-shadow: 0px 0px 6px #39ff14;
     }}
 
     [data-testid="stSidebar"] label:hover {{
-        color: #ffff66 !important;  
+        color: #ffff66 !important;
         text-shadow: 0px 0px 10px yellow, 0px 0px 20px #39ff14;
         transform: scale(1.05);
     }}
@@ -59,4 +60,86 @@ def set_background(jpg_file):
         font-size: 16px;
         text-align: center;
         text-shadow: 0px 0px 5px black;
-   
+    }}
+
+    /* Title */
+    .title {{
+        font-size: 40px;
+        font-weight: bold;
+        color: #ccff33;
+        text-align: center;
+        text-shadow: 0px 0px 20px #00ff00, 0px 0px 40px yellow;
+        margin-bottom: 20px;
+    }}
+
+    /* Upload text bigger */
+    .upload-label {{
+        font-size: 20px;
+        color: #39ff14;
+        font-weight: bold;
+        text-shadow: 0px 0px 8px black;
+    }}
+
+    /* Predict Button */
+    .stButton>button {{
+        background: linear-gradient(90deg, #39ff14, #ccff33);
+        color: black;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 12px;
+        padding: 12px 25px;
+        box-shadow: 0px 0px 20px #39ff14, 0px 0px 40px #ccff33;
+        transition: 0.3s;
+    }}
+
+    .stButton>button:hover {{
+        background: linear-gradient(90deg, yellow, #39ff14);
+        transform: scale(1.08);
+        box-shadow: 0px 0px 30px yellow, 0px 0px 60px #39ff14;
+    }}
+    </style>
+    """
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# Set background
+set_background("bg.jpg")
+
+# ------------------ APP TITLE ------------------
+st.markdown("<h1 class='title'>🌿 Citrus Leaf Disease Detector 🌿</h1>", unsafe_allow_html=True)
+
+# ------------------ SIDEBAR MENU ------------------
+st.sidebar.markdown("<h2>📌 Disease Information</h2>", unsafe_allow_html=True)
+
+disease = st.sidebar.radio("Select a disease", ["Black spot", "Melanose", "Canker", "Greening", "Healthy"])
+
+disease_images = {
+    "Black spot": "black_spot.jpg",
+    "Melanose": "melanose.jpg",
+    "Canker": "canker.jpg",
+    "Greening": "greening.jpg",
+    "Healthy": "healthy.jpg"
+}
+
+st.sidebar.image(disease_images[disease], use_container_width=True)
+st.sidebar.markdown(f"<p class='caption'>{disease} Example</p>", unsafe_allow_html=True)
+
+# ------------------ FILE UPLOAD ------------------
+st.markdown("<p class='upload-label'>📤 Upload a Citrus Leaf Image</p>", unsafe_allow_html=True)
+uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
+
+# ------------------ PREDICTION ------------------
+if uploaded_file is not None:
+    img = Image.open(uploaded_file).convert("RGB")
+    st.image(img, caption="Uploaded Image", use_container_width=True)
+
+    if st.button("🔍 Predict"):
+        img_resized = img.resize((224, 224))
+        img_array = image.img_to_array(img_resized) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+
+        prediction = model.predict(img_array)
+        predicted_class = labels[np.argmax(prediction)]
+        confidence = np.max(prediction) * 100
+
+        st.success(f"✅ Prediction: {predicted_class}")
+        st.info(f"📊 Confidence: {confidence:.2f}%")
