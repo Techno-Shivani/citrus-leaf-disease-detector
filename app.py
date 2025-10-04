@@ -6,147 +6,126 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from PIL import Image
 
-# ------------------ LOAD MODEL AND LABELS ------------------
-model = load_model("citrus_model.keras")
-with open("class_labels.txt") as f:
-    labels = [line.strip() for line in f]
+# ------------------ LOAD MODEL ------------------
+@st.cache_resource
+def load_citrus_model():
+    model = load_model("citrus_model.keras")
+    labels = ["Black spot", "Melanose", "Canker", "Greening", "Healthy"]
+    return model, labels
+
+model, class_labels = load_citrus_model()
 
 # ------------------ BACKGROUND IMAGE ------------------
-def get_base64(bin_file):
-    with open(bin_file, "rb") as f:
-        return base64.b64encode(f.read()).decode()
+def add_bg_from_local(bg_file):
+    with open(bg_file, "rb") as f:
+        data = f.read()
+    encoded = base64.b64encode(data).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpg;base64,{encoded}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-def set_background(jpg_file):
-    bin_str = get_base64(jpg_file)
-    page_bg_img = f"""
+add_bg_from_local("bg.jpg")
+
+# ------------------ CSS ------------------
+st.markdown("""
     <style>
-    [data-testid="stAppViewContainer"] {{
-        background-image: url("data:image/jpg;base64,{bin_str}");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-    }}
-
-    [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, #001a00, #003300);
-        padding: 20px;
-    }}
-
-    h1 {{
-        color: #ffff33;
+    h1 {
+        font-size: 48px !important;
         text-align: center;
-        font-size: 40px;
-        font-family: 'Poppins', sans-serif;
-        text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 40px #39ff14;
-    }}
-
-    h2 {{
-        color: #fff;
-        font-size: 24px;
-    }}
-
-    .disease-title {{
-        font-size: 28px;
-        color: #ffeb3b;
-        font-weight: bold;
-        text-shadow: 1px 1px 3px black;
-    }}
-
-    .about {{
-        font-size: 18px;
+        color: #fff200;
+        text-shadow: 2px 2px 8px #00ff00;
+    }
+    h2 {
         color: white;
-    }}
-
-    .solution {{
-        font-size: 18px;
-        color: #a5ffb5;
-    }}
-
-    .stButton>button {{
-        background: linear-gradient(90deg, #39ff14, #ffff33);
-        border-radius: 10px;
-        color: black;
-        font-size: 18px;
+    }
+    .upload-text {
+        font-size: 22px;
         font-weight: bold;
-        padding: 10px 20px;
-    }}
+        color: white;
+        text-align: center;
+    }
     </style>
-    """
-    st.markdown(page_bg_img, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# Call background
-set_background("bg.jpg")
-
-# ------------------ PREDICT FUNCTION ------------------
-def predict_disease(img):
-    img = img.convert("RGB").resize((224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0) / 255.0
-    preds = model.predict(x)[0]
-    result = {labels[i]: float(preds[i]) for i in range(len(labels))}
-    predicted_label = labels[np.argmax(preds)]
-    confidence = np.max(preds) * 100
-    return predicted_label, confidence, result
+# ------------------ TITLE ------------------
+st.markdown("<h1>🌿 Citrus Leaf Disease Detector 🌿</h1>", unsafe_allow_html=True)
 
 # ------------------ SIDEBAR MENU ------------------
-menu = st.sidebar.radio("🌿 Disease Information", [
-    "🍂 Black Spot",
-    "🍁 Melanose",
-    "🌱 Canker",
-    "🍃 Greening",
-    "🌿 Healthy"
-])
+menu = st.sidebar.selectbox(
+    "📘 Disease Information",
+    ["Black spot", "Melanose", "Canker", "Greening", "Healthy Leaf"]
+)
 
-# Disease Info
 disease_info = {
-    "🍂 Black Spot": {
-        "about": "Black spot is a fungal disease that causes dark circular spots on citrus leaves and fruits.",
-        "solution": "Use copper-based fungicides, prune infected leaves, and improve air circulation."
+    "Black spot": {
+        "img": "black_spot.jpg",
+        "about": "Black spot is a fungal disease causing dark lesions on leaves and fruits.",
+        "solution": "Use copper-based fungicides and ensure proper sanitation in orchards."
     },
-    "🍁 Melanose": {
-        "about": "Melanose is a fungal disease common in young citrus leaves, causing small dark lesions.",
-        "solution": "Apply protective fungicides like copper sprays and avoid overhead irrigation."
+    "Melanose": {
+        "img": "melanose.jpg",
+        "about": "Melanose is caused by Diaporthe citri fungus, producing brown spots on young leaves.",
+        "solution": "Apply fungicide sprays and remove infected twigs."
     },
-    "🌱 Canker": {
-        "about": "Canker is a bacterial disease causing raised corky lesions on leaves, stems, and fruit.",
-        "solution": "Remove and burn infected parts, use resistant varieties, and copper sprays for prevention."
+    "Canker": {
+        "img": "canker.jpg",
+        "about": "Canker causes raised brown lesions with yellow halos on citrus leaves and fruits.",
+        "solution": "Remove infected trees, use windbreaks, and copper sprays."
     },
-    "🍃 Greening": {
-        "about": "Greening (HLB) is a serious citrus disease caused by bacteria spread by psyllids.",
-        "solution": "Control psyllid population, remove infected trees, and provide balanced nutrition."
+    "Greening": {
+        "img": "greening.jpg",
+        "about": "Citrus greening is a bacterial disease spread by psyllids, causing yellow shoots and misshapen fruits.",
+        "solution": "Control psyllid vectors, remove diseased trees, and use resistant rootstocks."
     },
-    "🌿 Healthy": {
-        "about": "Healthy citrus leaves are green, shiny, and free of visible lesions or yellowing.",
-        "solution": "Maintain proper irrigation, fertilization, and monitor for early signs of disease."
+    "Healthy Leaf": {
+        "img": "healthy.jpg",
+        "about": "Healthy citrus leaves are green, smooth, and free from lesions or spots.",
+        "solution": "Maintain good soil health, regular irrigation, and balanced nutrients."
     }
 }
 
-# ------------------ UI MAIN ------------------
-st.markdown("<h1>🌿 Citrus Leaf Disease Detector 🌿</h1>", unsafe_allow_html=True)
+# Sidebar display
+info = disease_info[menu]
+st.sidebar.image(info["img"], caption=menu, use_container_width=True)
+st.sidebar.markdown(f"### 📝 About\n{info['about']}")
+st.sidebar.markdown(f"### 💡 Solution\n{info['solution']}")
 
-# Sidebar Info
-st.sidebar.markdown(f"<h2 class='disease-title'>{menu}</h2>", unsafe_allow_html=True)
-st.sidebar.markdown(f"<p class='about'><b>About:</b> {disease_info[menu]['about']}</p>", unsafe_allow_html=True)
-st.sidebar.markdown(f"<p class='solution'><b>Solution:</b> {disease_info[menu]['solution']}</p>", unsafe_allow_html=True)
+# ------------------ IMAGE UPLOAD ------------------
+st.markdown("<p class='upload-text'>📤 Upload a Citrus Leaf Image</p>", unsafe_allow_html=True)
+uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
 
-# Upload Section
-st.subheader("📤 Upload a Citrus Leaf Image")
-uploaded_file = st.file_uploader("Choose a leaf image", type=["jpg", "png", "jpeg"])
+def predict_leaf(img):
+    img = img.convert("RGB").resize((224,224))
+    arr = image.img_to_array(img) / 255.0
+    arr = np.expand_dims(arr, axis=0)
+    preds = model.predict(arr)[0]
+    return preds
 
-if uploaded_file:
+# ------------------ PREDICTION ------------------
+if uploaded_file is not None:
     img = Image.open(uploaded_file)
-    st.image(img, caption="Uploaded Leaf", use_container_width=True)
+    st.image(img, caption="Uploaded Leaf", width=300)
 
-    if st.button("🔍 Predict Disease"):
-        predicted_label, confidence, result = predict_disease(img)
+    preds = predict_leaf(img)
+    pred_idx = np.argmax(preds)
+    pred_label = class_labels[pred_idx]
+    confidence = preds[pred_idx] * 100
 
-        st.success(f"🌟 Prediction: **{predicted_label}** ({confidence:.2f}%)")
+    st.success(f"✅ Prediction: **{pred_label}** ({confidence:.2f}%)")
 
-        # Show probability graph
-        st.subheader("📊 Prediction Confidence")
-        fig, ax = plt.subplots()
-        ax.bar(result.keys(), result.values(), color="green")
-        ax.set_ylabel("Confidence")
-        ax.set_title("Model Prediction Probability")
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
+    # Bar graph
+    fig, ax = plt.subplots()
+    ax.bar(class_labels, preds*100, color="limegreen")
+    ax.set_ylabel("Confidence (%)")
+    ax.set_title("Prediction Probabilities")
+    st.pyplot(fig)
