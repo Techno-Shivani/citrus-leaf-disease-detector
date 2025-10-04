@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import numpy as np
+import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from PIL import Image
@@ -27,173 +28,125 @@ def set_background(jpg_file):
     }}
 
     [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, #001a00, #002200);
+        background: linear-gradient(180deg, #001a00, #003300);
         padding: 20px;
     }}
 
-    /* Sidebar Heading */
-    [data-testid="stSidebar"] h2 {{
-        color: #ffff33; 
-        font-size: 24px !important;
-        text-shadow: 0px 0px 15px #ffff66;
-        font-weight: bold;
-    }}
-
-    /* Sidebar Radio Buttons */
-    [data-testid="stSidebar"] label {{
-        color: white !important;
-        font-size: 18px !important;
-        font-weight: bold !important;
-        text-shadow: 0px 0px 6px #39ff14;
-    }}
-
-    [data-testid="stSidebar"] label:hover {{
-        color: #ffff66 !important;
-        text-shadow: 0px 0px 10px yellow, 0px 0px 20px #39ff14;
-        transform: scale(1.05);
-    }}
-
-    /* Caption under images */
-    .caption {{
-        color: white;
-        font-weight: bold;
-        font-size: 16px;
+    h1 {{
+        color: #ffff33;
         text-align: center;
-        text-shadow: 0px 0px 5px black;
-    }}
-
-    /* Title */
-    .title {{
         font-size: 40px;
-        font-weight: bold;
-        color: #ccff33;
-        text-align: center;
-        text-shadow: 0px 0px 20px #00ff00, 0px 0px 40px yellow;
-        margin-bottom: 20px;
+        font-family: 'Poppins', sans-serif;
+        text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 40px #39ff14;
     }}
 
-    /* Upload text bigger */
-    .upload-label {{
-        font-size: 20px;
-        color: #39ff14;
-        font-weight: bold;
-        text-shadow: 0px 0px 8px black;
+    h2 {{
+        color: #fff;
+        font-size: 24px;
     }}
 
-    /* Predict Button */
+    .disease-title {{
+        font-size: 28px;
+        color: #ffeb3b;
+        font-weight: bold;
+        text-shadow: 1px 1px 3px black;
+    }}
+
+    .about {{
+        font-size: 18px;
+        color: white;
+    }}
+
+    .solution {{
+        font-size: 18px;
+        color: #a5ffb5;
+    }}
+
     .stButton>button {{
-        background: linear-gradient(90deg, #39ff14, #ccff33);
+        background: linear-gradient(90deg, #39ff14, #ffff33);
+        border-radius: 10px;
         color: black;
         font-size: 18px;
         font-weight: bold;
-        border-radius: 12px;
-        padding: 12px 25px;
-        box-shadow: 0px 0px 20px #39ff14, 0px 0px 40px #ccff33;
-        transition: 0.3s;
-    }}
-
-    .stButton>button:hover {{
-        background: linear-gradient(90deg, yellow, #39ff14);
-        transform: scale(1.08);
-        box-shadow: 0px 0px 30px yellow, 0px 0px 60px #39ff14;
-    }}
-
-    /* Info Cards */
-    .card {{
-        background: rgba(0, 20, 0, 0.8);
-        border-radius: 12px;
-        padding: 20px;
-        margin-top: 20px;
-        box-shadow: 0px 0px 15px #39ff14;
-    }}
-    .card h3 {{
-        color: #ffff33;
-        text-shadow: 0px 0px 12px #39ff14;
-    }}
-    .card p {{
-        color: white;
-        font-size: 16px;
-        line-height: 1.5;
+        padding: 10px 20px;
     }}
     </style>
     """
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
-# Set background
+# Call background
 set_background("bg.jpg")
 
-# ------------------ APP TITLE ------------------
-st.markdown("<h1 class='title'>🌿 Citrus Leaf Disease Detector 🌿</h1>", unsafe_allow_html=True)
+# ------------------ PREDICT FUNCTION ------------------
+def predict_disease(img):
+    img = img.convert("RGB").resize((224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0) / 255.0
+    preds = model.predict(x)[0]
+    result = {labels[i]: float(preds[i]) for i in range(len(labels))}
+    predicted_label = labels[np.argmax(preds)]
+    confidence = np.max(preds) * 100
+    return predicted_label, confidence, result
 
 # ------------------ SIDEBAR MENU ------------------
-st.sidebar.markdown("<h2>📌 Disease Information</h2>", unsafe_allow_html=True)
+menu = st.sidebar.radio("🌿 Disease Information", [
+    "🍂 Black Spot",
+    "🍁 Melanose",
+    "🌱 Canker",
+    "🍃 Greening",
+    "🌿 Healthy"
+])
 
-disease = st.sidebar.radio("Select a disease", ["Black spot", "Melanose", "Canker", "Greening", "Healthy"])
-
-disease_images = {
-    "Black spot": "black_spot.jpg",
-    "Melanose": "melanose.jpg",
-    "Canker": "canker.jpg",
-    "Greening": "greening.jpg",
-    "Healthy": "healthy.jpg"
-}
-
-st.sidebar.image(disease_images[disease], use_container_width=True)
-st.sidebar.markdown(f"<p class='caption'>{disease} Example</p>", unsafe_allow_html=True)
-
-# ------------------ ABOUT + SOLUTIONS ------------------
+# Disease Info
 disease_info = {
-    "Black spot": {
-        "about": "Black spot causes dark circular lesions on leaves and fruits, reducing plant health.",
-        "solution": "Spray copper-based fungicides and remove infected leaves."
+    "🍂 Black Spot": {
+        "about": "Black spot is a fungal disease that causes dark circular spots on citrus leaves and fruits.",
+        "solution": "Use copper-based fungicides, prune infected leaves, and improve air circulation."
     },
-    "Melanose": {
-        "about": "Melanose leads to brown raised spots and roughened leaf surface, common in humid climates.",
-        "solution": "Apply fungicide sprays and ensure good air circulation in orchards."
+    "🍁 Melanose": {
+        "about": "Melanose is a fungal disease common in young citrus leaves, causing small dark lesions.",
+        "solution": "Apply protective fungicides like copper sprays and avoid overhead irrigation."
     },
-    "Canker": {
-        "about": "Canker is a bacterial disease that produces raised brown lesions with yellow halos.",
-        "solution": "Use resistant varieties and apply copper sprays regularly."
+    "🌱 Canker": {
+        "about": "Canker is a bacterial disease causing raised corky lesions on leaves, stems, and fruit.",
+        "solution": "Remove and burn infected parts, use resistant varieties, and copper sprays for prevention."
     },
-    "Greening": {
-        "about": "Greening (HLB) is a deadly bacterial disease spread by psyllids, leading to yellow shoots and misshapen fruits.",
-        "solution": "Remove infected plants and control psyllid population with insecticides."
+    "🍃 Greening": {
+        "about": "Greening (HLB) is a serious citrus disease caused by bacteria spread by psyllids.",
+        "solution": "Control psyllid population, remove infected trees, and provide balanced nutrition."
     },
-    "Healthy": {
-        "about": "This leaf is healthy with no signs of infection.",
-        "solution": "Maintain proper nutrition and irrigation for continued health."
+    "🌿 Healthy": {
+        "about": "Healthy citrus leaves are green, shiny, and free of visible lesions or yellowing.",
+        "solution": "Maintain proper irrigation, fertilization, and monitor for early signs of disease."
     }
 }
 
-# ------------------ FILE UPLOAD ------------------
-st.markdown("<p class='upload-label'>📤 Upload a Citrus Leaf Image</p>", unsafe_allow_html=True)
-uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
+# ------------------ UI MAIN ------------------
+st.markdown("<h1>🌿 Citrus Leaf Disease Detector 🌿</h1>", unsafe_allow_html=True)
 
-# ------------------ PREDICTION ------------------
-if uploaded_file is not None:
-    img = Image.open(uploaded_file).convert("RGB")
-    st.image(img, caption="Uploaded Image", use_container_width=True)
+# Sidebar Info
+st.sidebar.markdown(f"<h2 class='disease-title'>{menu}</h2>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<p class='about'><b>About:</b> {disease_info[menu]['about']}</p>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<p class='solution'><b>Solution:</b> {disease_info[menu]['solution']}</p>", unsafe_allow_html=True)
 
-    if st.button("🔍 Predict"):
-        img_resized = img.resize((224, 224))
-        img_array = image.img_to_array(img_resized) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
+# Upload Section
+st.subheader("📤 Upload a Citrus Leaf Image")
+uploaded_file = st.file_uploader("Choose a leaf image", type=["jpg", "png", "jpeg"])
 
-        prediction = model.predict(img_array)
-        predicted_class = labels[np.argmax(prediction)]
-        confidence = np.max(prediction) * 100
+if uploaded_file:
+    img = Image.open(uploaded_file)
+    st.image(img, caption="Uploaded Leaf", use_container_width=True)
 
-        st.success(f"✅ Prediction: {predicted_class}")
-        st.info(f"📊 Confidence: {confidence:.2f}%")
+    if st.button("🔍 Predict Disease"):
+        predicted_label, confidence, result = predict_disease(img)
 
-        # Show About + Solution Card
-        info = disease_info.get(predicted_class, {})
-        if info:
-            st.markdown(f"""
-            <div class='card'>
-                <h3>📖 About</h3>
-                <p>{info['about']}</p>
-                <h3>💡 Solution</h3>
-                <p>{info['solution']}</p>
-            </div>
-            """, unsafe_allow_html=True)
+        st.success(f"🌟 Prediction: **{predicted_label}** ({confidence:.2f}%)")
+
+        # Show probability graph
+        st.subheader("📊 Prediction Confidence")
+        fig, ax = plt.subplots()
+        ax.bar(result.keys(), result.values(), color="green")
+        ax.set_ylabel("Confidence")
+        ax.set_title("Model Prediction Probability")
+        plt.xticks(rotation=45)
+        st.pyplot(fig)
