@@ -33,7 +33,7 @@ def set_background(jpg_file):
 
     /* Sidebar Heading */
     [data-testid="stSidebar"] h2 {{
-        color: #ffff33; /* Yellow Glow */
+        color: #ffff33; 
         font-size: 24px !important;
         text-shadow: 0px 0px 15px #ffff66;
         font-weight: bold;
@@ -97,6 +97,24 @@ def set_background(jpg_file):
         transform: scale(1.08);
         box-shadow: 0px 0px 30px yellow, 0px 0px 60px #39ff14;
     }}
+
+    /* Info Cards */
+    .card {{
+        background: rgba(0, 20, 0, 0.8);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0px 0px 15px #39ff14;
+    }}
+    .card h3 {{
+        color: #ffff33;
+        text-shadow: 0px 0px 12px #39ff14;
+    }}
+    .card p {{
+        color: white;
+        font-size: 16px;
+        line-height: 1.5;
+    }}
     </style>
     """
     st.markdown(page_bg_img, unsafe_allow_html=True)
@@ -123,6 +141,30 @@ disease_images = {
 st.sidebar.image(disease_images[disease], use_container_width=True)
 st.sidebar.markdown(f"<p class='caption'>{disease} Example</p>", unsafe_allow_html=True)
 
+# ------------------ ABOUT + SOLUTIONS ------------------
+disease_info = {
+    "Black spot": {
+        "about": "Black spot causes dark circular lesions on leaves and fruits, reducing plant health.",
+        "solution": "Spray copper-based fungicides and remove infected leaves."
+    },
+    "Melanose": {
+        "about": "Melanose leads to brown raised spots and roughened leaf surface, common in humid climates.",
+        "solution": "Apply fungicide sprays and ensure good air circulation in orchards."
+    },
+    "Canker": {
+        "about": "Canker is a bacterial disease that produces raised brown lesions with yellow halos.",
+        "solution": "Use resistant varieties and apply copper sprays regularly."
+    },
+    "Greening": {
+        "about": "Greening (HLB) is a deadly bacterial disease spread by psyllids, leading to yellow shoots and misshapen fruits.",
+        "solution": "Remove infected plants and control psyllid population with insecticides."
+    },
+    "Healthy": {
+        "about": "This leaf is healthy with no signs of infection.",
+        "solution": "Maintain proper nutrition and irrigation for continued health."
+    }
+}
+
 # ------------------ FILE UPLOAD ------------------
 st.markdown("<p class='upload-label'>📤 Upload a Citrus Leaf Image</p>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
@@ -143,3 +185,15 @@ if uploaded_file is not None:
 
         st.success(f"✅ Prediction: {predicted_class}")
         st.info(f"📊 Confidence: {confidence:.2f}%")
+
+        # Show About + Solution Card
+        info = disease_info.get(predicted_class, {})
+        if info:
+            st.markdown(f"""
+            <div class='card'>
+                <h3>📖 About</h3>
+                <p>{info['about']}</p>
+                <h3>💡 Solution</h3>
+                <p>{info['solution']}</p>
+            </div>
+            """, unsafe_allow_html=True)
