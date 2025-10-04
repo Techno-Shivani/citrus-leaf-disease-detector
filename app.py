@@ -2,135 +2,138 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-from pathlib import Path
+import os
 
-# Load Model & Labels
+# Load Model
 model = tf.keras.models.load_model("citrus_model.keras")
-labels = [l.strip() for l in open("class_labels.txt")]
 
-# CSS
-st.markdown("""
+# Load class labels
+with open("class_labels.txt") as f:
+    class_names = [line.strip() for line in f.readlines()]
+
+# Disease info
+disease_info = {
+    "Black spot": {
+        "image": "black_spot.jpg",
+        "about": "Black spot causes dark circular lesions on leaves and fruits.",
+        "solution": "Spray copper-based fungicides and remove infected leaves."
+    },
+    "Canker": {
+        "image": "canker.jpg",
+        "about": "Canker causes lesions with a water-soaked margin and yellow halo.",
+        "solution": "Use copper sprays and resistant varieties."
+    },
+    "Melanose": {
+        "image": "melanose.jpg",
+        "about": "Melanose produces small dark brown spots on leaves and fruits.",
+        "solution": "Prune dead branches and apply fungicide sprays."
+    },
+    "Greening": {
+        "image": "greening.jpg",
+        "about": "Greening makes leaves yellow with green veins.",
+        "solution": "Remove infected plants and control psyllid insect."
+    },
+    "Healthy": {
+        "image": "healthy.jpg",
+        "about": "Healthy citrus leaf with no signs of disease.",
+        "solution": "Maintain proper watering and nutrient management."
+    }
+}
+
+# --- Page Config ---
+st.set_page_config(page_title="Citrus Leaf Disease Detector", page_icon="🍋", layout="wide")
+
+# --- Background Image ---
+page_bg = f"""
 <style>
-body {
-    background: linear-gradient(120deg, #d9fdd3, #f0fff0);
-    font-family: 'Poppins', sans-serif;
-}
-.neon-title {
-    font-size: 48px;
-    font-weight: 800;
-    text-align: center;
-    color: #eaff65;
-    text-shadow: 0px 0px 6px #00ff88, 0px 0px 12px #00ff88, 0px 0px 18px #00ff88;
-    margin-bottom: 15px;
-}
-.upload-box {
-    background: rgba(255,255,255,0.8);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
-    text-align: center;
-}
-.result-box {
-    background: #1b1b1b;
-    color: white;
-    padding: 20px;
-    border-radius: 15px;
-    text-align: center;
-    margin-top: 15px;
-}
-.neon-btn {
-    display: inline-block;
-    padding: 12px 25px;
-    background: linear-gradient(90deg,#00ff88,#eaff65);
-    color: black;
-    font-weight: 600;
-    border-radius: 25px;
-    text-decoration: none;
-    transition: 0.3s;
-    margin-top: 15px;
-}
-.neon-btn:hover {
-    box-shadow: 0 0 10px #00ff88, 0 0 20px #eaff65;
-    transform: scale(1.05);
-}
-.cards-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 25px;
-    margin-top: 40px;
-}
-.card {
-    width: 260px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: white;
-    box-shadow: 0px 6px 15px rgba(0,0,0,0.15);
-    transition: 0.3s;
-}
-.card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0px 10px 25px rgba(0,0,0,0.2);
-}
-.card img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-}
-.card-body {
-    padding: 15px;
-    text-align: center;
-}
-.card-body h4 {
-    color: #00994d;
-    margin-bottom: 10px;
-}
-.card-body p {
-    font-size: 14px;
-    color: #444;
-}
+[data-testid="stAppViewContainer"] {{
+    background: url("bg.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}}
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(page_bg, unsafe_allow_html=True)
 
-# Heading
-st.markdown('<div class="neon-title">🌿 Citrus Leaf Disease Detector</div>', unsafe_allow_html=True)
-
-# Upload Section
-col1, col2 = st.columns([1,1])
-with col1:
-    st.markdown('<div class="upload-box">', unsafe_allow_html=True)
-    file = st.file_uploader("📂 Upload a Citrus Leaf Image", type=["jpg","jpeg","png"])
-    if file:
-        img = Image.open(file).convert("RGB").resize((224,224))
-        st.image(img, caption="Uploaded Leaf", use_container_width=True)
-        arr = np.expand_dims(np.array(img)/255.0, axis=0)
-        preds = model.predict(arr)[0]
-        top = np.argmax(preds)
-        conf = preds[top]*100
-        st.markdown(f'<div class="result-box">Prediction: <b>{labels[top]}</b> ({conf:.2f}%)</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# Knowledge Cards
-st.subheader("📘 Disease Knowledge Cards")
-cards = [
-  {"title": "Black Spot", "img": "black_spot.jpg", "about": "Dark circular lesions on leaves & fruits.", "solution": "Use copper fungicides & prune infected leaves."},
-  {"title": "Melanose", "img": "melanose.jpg", "about": "Brown raised lesions with sandpaper texture.", "solution": "Remove dead twigs, apply copper sprays."},
-  {"title": "Canker", "img": "canker.jpg", "about": "Raised corky lesions with yellow halo.", "solution": "Remove infected plants, use bactericides."},
-  {"title": "Greening", "img": "greening.jpg", "about": "Blotchy mottling & bitter fruits.", "solution": "Control psyllids, remove infected trees."},
-  {"title": "Healthy", "img": "healthy.jpg", "about": "Glossy green leaves & healthy fruits.", "solution": "Maintain nutrition & irrigation."},
-]
-
-st.markdown('<div class="cards-grid">', unsafe_allow_html=True)
-for c in cards:
-    html = f"""
-    <div class="card">
-      <img src="{c['img']}" alt="{c['title']}">
-      <div class="card-body">
-        <h4>{c['title']}</h4>
-        <p><b>About:</b> {c['about']}</p>
-        <p><b>Solution:</b> {c['solution']}</p>
-      </div>
-    </div>
+# --- Heading ---
+st.markdown(
     """
-    st.markdown(html, unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+    <h1 style='text-align: center; color: #ccff00; font-family: Poppins; 
+    text-shadow: 0 0 20px #00ff55, 0 0 40px #00ff55;'>
+    🍃 Citrus Leaf Disease Detector 🍃
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
+
+st.write("")
+
+# --- Layout ---
+col1, col2 = st.columns([1, 2])
+
+# Disease Information Section
+with col1:
+    st.subheader("📌 Disease Information")
+    selected = st.radio("Select a disease", list(disease_info.keys()))
+
+    st.image(disease_info[selected]["image"], caption=f"{selected} Example", use_container_width=True)
+
+    st.markdown(f"### 🌿 About:\n{disease_info[selected]['about']}")
+    st.markdown(f"### 💡 Solution:\n{disease_info[selected]['solution']}")
+
+# Prediction Section
+with col2:
+    st.subheader("🔍 Upload a Citrus Leaf Image")
+    uploaded_file = st.file_uploader("Upload leaf image", type=["jpg", "jpeg", "png"])
+
+    if uploaded_file is not None:
+        img = Image.open(uploaded_file).convert("RGB")
+        st.image(img, caption="Uploaded Leaf", use_container_width=True)
+
+        # Preprocess
+        img_resized = img.resize((224, 224))
+        img_array = np.array(img_resized) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+
+        # Predict
+        predictions = model.predict(img_array)
+        confidence = np.max(predictions) * 100
+        predicted_class = class_names[np.argmax(predictions)]
+
+        st.markdown(
+            f"""
+            <div style='text-align:center; padding:20px; 
+            border-radius:15px; background:rgba(0,0,0,0.6); 
+            color:#ccff00; font-size:22px; font-weight:bold;
+            text-shadow: 0 0 10px #00ff55;'>
+            ✅ Prediction: {predicted_class} <br>
+            📊 Confidence: {confidence:.2f}%
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            """
+            <style>
+            div.stButton > button {
+                background-color: #00cc44;
+                color: white;
+                font-size: 20px;
+                border-radius: 10px;
+                box-shadow: 0px 0px 15px #00ff55;
+                transition: 0.3s;
+            }
+            div.stButton > button:hover {
+                background-color: #00ff55;
+                color: black;
+                transform: scale(1.1);
+                box-shadow: 0px 0px 30px #ccff00;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        st.button("🔮 Predict Again")
+
