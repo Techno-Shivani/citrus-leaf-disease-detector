@@ -26,40 +26,57 @@ def set_background(jpg_file):
         background-attachment: fixed;
     }}
 
-    /* Sidebar background */
     [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, #001a00, #003300);
+        background: linear-gradient(180deg, #001a00, #002200);
         padding: 20px;
     }}
 
-    /* Sidebar Title */
     [data-testid="stSidebar"] h2 {{
         color: #ff4dd2;
         font-size: 24px !important;
-        text-shadow: 0px 0px 10px #ff66ff, 0px 0px 20px #ff33cc;
+        text-shadow: 0px 0px 15px #ff33cc;
+        font-weight: bold;
     }}
 
-    /* Sidebar radio labels */
+    /* Sidebar labels - white with glow */
     [data-testid="stSidebar"] label {{
-        color: #ffff66 !important;   
+        color: white !important;   
         font-size: 18px !important;  
         font-weight: bold !important;
-        text-shadow: 0px 0px 5px #00ff99;
+        text-shadow: 0px 0px 6px #39ff14;
     }}
 
-    /* Hover effect on radio buttons */
+    /* Hover effect */
     [data-testid="stSidebar"] label:hover {{
-        color: #39ff14 !important;  
-        text-shadow: 0px 0px 10px #39ff14, 0px 0px 20px yellow;
+        color: #ffff66 !important;  
+        text-shadow: 0px 0px 10px yellow, 0px 0px 20px #39ff14;
         transform: scale(1.05);
     }}
 
-    /* Upload file label */
+    /* Caption under images */
+    .caption {{
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        text-align: center;
+        text-shadow: 0px 0px 5px black;
+    }}
+
+    /* Upload section */
     .uploadedFileLabel, .css-1djdyxw {{
         font-size: 22px !important;
         color: #ffcc00 !important;
         font-weight: bold !important;
         text-shadow: 0px 0px 10px #39ff14;
+    }}
+
+    /* Title styling */
+    .main-title {{
+        text-align: center; 
+        color: #ccff00; 
+        font-size: 42px; 
+        text-shadow: 2px 2px 4px black, 0px 0px 15px #39ff14, 0px 0px 30px yellow;
+        font-weight: bold;
     }}
 
     /* Prediction result */
@@ -81,39 +98,41 @@ def set_background(jpg_file):
 # Set background
 set_background("bg.jpg")
 
-# App title
-st.markdown(
-    "<h1 style='text-align: center; color: #ccff00; text-shadow: 0px 0px 10px #39ff14, 0px 0px 20px yellow;'>🌿 Citrus Leaf Disease Detector 🌿</h1>",
-    unsafe_allow_html=True
-)
+# App title with outline
+st.markdown("<h1 class='main-title'>🌿 Citrus Leaf Disease Detector 🌿</h1>", unsafe_allow_html=True)
 
 # Sidebar Disease Info
 st.sidebar.markdown("## 📌 Disease Information")
 disease = st.sidebar.radio("Select a disease", labels)
 
-# Show example image
+# Show example images + captions
 if disease.lower() == "black spot":
-    st.sidebar.image("black_spot.jpg", caption="Black spot Example")
+    st.sidebar.image("black_spot.jpg")
+    st.sidebar.markdown("<p class='caption'>Black spot Example</p>", unsafe_allow_html=True)
     st.sidebar.markdown("### 🌱 About:\nBlack spot causes dark circular lesions on leaves and fruits.")
     st.sidebar.markdown("### 💡 Solution:\nSpray copper-based fungicides and remove infected leaves.")
 
 elif disease.lower() == "canker":
-    st.sidebar.image("canker.jpg", caption="Canker Example")
+    st.sidebar.image("canker.jpg")
+    st.sidebar.markdown("<p class='caption'>Canker Example</p>", unsafe_allow_html=True)
     st.sidebar.markdown("### 🌱 About:\nCanker produces raised corky lesions on leaves, stems, and fruits.")
     st.sidebar.markdown("### 💡 Solution:\nUse resistant varieties and apply bactericides.")
 
 elif disease.lower() == "melanose":
-    st.sidebar.image("melanose.jpg", caption="Melanose Example")
+    st.sidebar.image("melanose.jpg")
+    st.sidebar.markdown("<p class='caption'>Melanose Example</p>", unsafe_allow_html=True)
     st.sidebar.markdown("### 🌱 About:\nMelanose causes small dark brown lesions on leaves and fruits.")
     st.sidebar.markdown("### 💡 Solution:\nRemove old twigs and apply fungicides.")
 
 elif disease.lower() == "greening":
-    st.sidebar.image("greening.jpg", caption="Greening Example")
+    st.sidebar.image("greening.jpg")
+    st.sidebar.markdown("<p class='caption'>Greening Example</p>", unsafe_allow_html=True)
     st.sidebar.markdown("### 🌱 About:\nGreening causes yellow shoots and misshapen fruits.")
     st.sidebar.markdown("### 💡 Solution:\nControl psyllid insects and remove infected plants.")
 
 elif disease.lower() == "healthy":
-    st.sidebar.image("healthy.jpg", caption="Healthy Leaf")
+    st.sidebar.image("healthy.jpg")
+    st.sidebar.markdown("<p class='caption'>Healthy Leaf</p>", unsafe_allow_html=True)
     st.sidebar.markdown("### 🌱 About:\nThis leaf is healthy and shows no signs of disease.")
     st.sidebar.markdown("### 💡 Solution:\nMaintain proper care for citrus plants.")
 
