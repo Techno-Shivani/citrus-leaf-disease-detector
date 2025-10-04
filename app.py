@@ -62,14 +62,6 @@ def set_background(jpg_file):
         text-shadow: 0px 0px 5px black;
     }}
 
-    /* Upload section */
-    .uploadedFileLabel, .css-1djdyxw {{
-        font-size: 22px !important;
-        color: #ffcc00 !important;
-        font-weight: bold !important;
-        text-shadow: 0px 0px 10px #39ff14;
-    }}
-
     /* Title styling */
     .main-title {{
         text-align: center; 
@@ -77,6 +69,27 @@ def set_background(jpg_file):
         font-size: 42px; 
         text-shadow: 2px 2px 4px black, 0px 0px 15px #39ff14, 0px 0px 30px yellow;
         font-weight: bold;
+        margin-bottom: 30px;
+    }}
+
+    /* Upload box card */
+    .upload-card {{
+        border: 2px solid #39ff14;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.6);
+        box-shadow: 0px 0px 15px #39ff14, 0px 0px 25px #ffff33;
+        margin: 20px auto;
+        width: 80%;
+    }}
+
+    .upload-title {{
+        font-size: 24px;
+        font-weight: bold;
+        color: #ffcc00;
+        text-shadow: 0px 0px 10px #39ff14;
+        margin-bottom: 15px;
     }}
 
     /* Prediction result */
@@ -136,8 +149,10 @@ elif disease.lower() == "healthy":
     st.sidebar.markdown("### 🌱 About:\nThis leaf is healthy and shows no signs of disease.")
     st.sidebar.markdown("### 💡 Solution:\nMaintain proper care for citrus plants.")
 
-# Upload Section
-uploaded_file = st.file_uploader("📤 Upload a Citrus Leaf Image", type=["jpg", "jpeg", "png"])
+# Upload Section with glowing card
+st.markdown("<div class='upload-card'><div class='upload-title'>📤 Upload a Citrus Leaf Image</div>", unsafe_allow_html=True)
+uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
+st.markdown("</div>", unsafe_allow_html=True)
 
 if uploaded_file is not None:
     img = Image.open(uploaded_file).convert("RGB")
