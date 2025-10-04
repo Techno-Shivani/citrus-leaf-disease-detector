@@ -1,129 +1,134 @@
 import streamlit as st
+import tensorflow as tf
+import numpy as np
+from PIL import Image
 from pathlib import Path
 
+# Load Model & Labels
+model = tf.keras.models.load_model("citrus_model.keras")
+labels = [l.strip() for l in open("class_labels.txt")]
+
+# CSS
 st.markdown("""
 <style>
-/* Clean neon heading */
-.neon-title{
-  font-family: 'Poppins', sans-serif;
-  font-size: 42px;
-  font-weight: 800;
-  text-align: center;
-  background: linear-gradient(90deg, #eaff65, #00ff88);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 8px rgba(0,255,136,0.6), 0 0 14px rgba(234,255,101,0.6);
-  margin: 25px 0;
+body {
+    background: linear-gradient(120deg, #d9fdd3, #f0fff0);
+    font-family: 'Poppins', sans-serif;
 }
-
-/* Grid */
-.cards-grid{
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 25px;
-  padding: 20px 0;
+.neon-title {
+    font-size: 48px;
+    font-weight: 800;
+    text-align: center;
+    color: #eaff65;
+    text-shadow: 0px 0px 6px #00ff88, 0px 0px 12px #00ff88, 0px 0px 18px #00ff88;
+    margin-bottom: 15px;
 }
-
-/* Flip Card */
-.flip-card{
-  width: 260px;
-  height: 340px;
-  perspective: 1000px;
+.upload-box {
+    background: rgba(255,255,255,0.8);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
+    text-align: center;
 }
-
-.flip-card-inner{
-  position: relative;
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
+.result-box {
+    background: #1b1b1b;
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    margin-top: 15px;
 }
-.flip-card:hover .flip-card-inner{
-  transform: rotateY(180deg);
+.neon-btn {
+    display: inline-block;
+    padding: 12px 25px;
+    background: linear-gradient(90deg,#00ff88,#eaff65);
+    color: black;
+    font-weight: 600;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: 0.3s;
+    margin-top: 15px;
 }
-
-/* Faces */
-.flip-face{
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+.neon-btn:hover {
+    box-shadow: 0 0 10px #00ff88, 0 0 20px #eaff65;
+    transform: scale(1.05);
 }
-
-/* Front */
-.flip-front{
-  background: #fff;
+.cards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 40px;
 }
-.flip-front img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.card {
+    width: 260px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0px 6px 15px rgba(0,0,0,0.15);
+    transition: 0.3s;
 }
-
-/* Back */
-.flip-back{
-  background: linear-gradient(135deg,#00c36f,#eaff65);
-  color: #0e261a;
-  transform: rotateY(180deg);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 18px;
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0px 10px 25px rgba(0,0,0,0.2);
 }
-.flip-back h4{
-  margin: 6px 0;
-  font-size: 20px;
-  font-weight: 700;
+.card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
 }
-.flip-back p{
-  font-size: 14px;
-  line-height: 1.4;
+.card-body {
+    padding: 15px;
+    text-align: center;
+}
+.card-body h4 {
+    color: #00994d;
+    margin-bottom: 10px;
+}
+.card-body p {
+    font-size: 14px;
+    color: #444;
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="neon-title">🌿 Citrus Leaf Disease — Knowledge Cards</div>', unsafe_allow_html=True)
+# Heading
+st.markdown('<div class="neon-title">🌿 Citrus Leaf Disease Detector</div>', unsafe_allow_html=True)
 
-# Cards data
+# Upload Section
+col1, col2 = st.columns([1,1])
+with col1:
+    st.markdown('<div class="upload-box">', unsafe_allow_html=True)
+    file = st.file_uploader("📂 Upload a Citrus Leaf Image", type=["jpg","jpeg","png"])
+    if file:
+        img = Image.open(file).convert("RGB").resize((224,224))
+        st.image(img, caption="Uploaded Leaf", use_container_width=True)
+        arr = np.expand_dims(np.array(img)/255.0, axis=0)
+        preds = model.predict(arr)[0]
+        top = np.argmax(preds)
+        conf = preds[top]*100
+        st.markdown(f'<div class="result-box">Prediction: <b>{labels[top]}</b> ({conf:.2f}%)</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Knowledge Cards
+st.subheader("📘 Disease Knowledge Cards")
 cards = [
-  {"title": "Black Spot", "img": "black_spot.jpg", 
-   "about": "Dark circular lesions on citrus leaves and fruits.",
-   "solution": "Use copper-based fungicides and prune infected areas."},
-  {"title": "Melanose", "img": "melanose.jpg", 
-   "about": "Small raised brown lesions, sandpaper-like feel.",
-   "solution": "Remove dead twigs and apply copper sprays."},
-  {"title": "Canker", "img": "canker.jpg", 
-   "about": "Raised corky lesions with yellow halo, bacterial disease.",
-   "solution": "Remove infected plants and use bactericides."},
-  {"title": "Greening", "img": "greening.jpg", 
-   "about": "Blotchy mottling, bitter fruits. Spread by psyllids.",
-   "solution": "Remove infected trees and control psyllids."},
-  {"title": "Healthy", "img": "healthy.jpg", 
-   "about": "Glossy deep-green leaves and healthy fruits.",
-   "solution": "Balanced nutrients and proper irrigation."},
+  {"title": "Black Spot", "img": "black_spot.jpg", "about": "Dark circular lesions on leaves & fruits.", "solution": "Use copper fungicides & prune infected leaves."},
+  {"title": "Melanose", "img": "melanose.jpg", "about": "Brown raised lesions with sandpaper texture.", "solution": "Remove dead twigs, apply copper sprays."},
+  {"title": "Canker", "img": "canker.jpg", "about": "Raised corky lesions with yellow halo.", "solution": "Remove infected plants, use bactericides."},
+  {"title": "Greening", "img": "greening.jpg", "about": "Blotchy mottling & bitter fruits.", "solution": "Control psyllids, remove infected trees."},
+  {"title": "Healthy", "img": "healthy.jpg", "about": "Glossy green leaves & healthy fruits.", "solution": "Maintain nutrition & irrigation."},
 ]
 
-# Render
 st.markdown('<div class="cards-grid">', unsafe_allow_html=True)
 for c in cards:
-    img_path = str(Path(c["img"]))
     html = f"""
-    <div class="flip-card">
-      <div class="flip-card-inner">
-        <div class="flip-face flip-front">
-          <img src="{img_path}" alt="{c['title']} image">
-        </div>
-        <div class="flip-face flip-back">
-          <h4>{c['title']}</h4>
-          <p><b>About:</b> {c['about']}</p>
-          <p><b>Solution:</b> {c['solution']}</p>
-        </div>
+    <div class="card">
+      <img src="{c['img']}" alt="{c['title']}">
+      <div class="card-body">
+        <h4>{c['title']}</h4>
+        <p><b>About:</b> {c['about']}</p>
+        <p><b>Solution:</b> {c['solution']}</p>
       </div>
     </div>
     """
