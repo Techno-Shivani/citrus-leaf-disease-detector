@@ -21,8 +21,19 @@ def set_background(jpg_file):
         background-attachment: fixed;
     }}
     [data-testid="stSidebar"] {{
-        background-color: rgba(0,0,0,0.65);
-        color: white;
+        background: linear-gradient(180deg, #003300, #004d00);
+        color: #ffffff;
+    }}
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] span {{
+        color: #00ff99 !important;
+        font-weight: 600;
+        font-size: 16px;
+    }}
+    .disease-text {{
+        color: #ffcc00;
+        font-size: 14px;
     }}
     </style>
     """
@@ -47,9 +58,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ---------------- SIDEBAR - KNOWLEDGE CARDS ----------------
+# ---------------- SIDEBAR ----------------
 st.sidebar.markdown(
     "<h2 style='color:#39ff14;text-shadow:0 0 10px yellow;'>📌 Disease Information</h2>",
     unsafe_allow_html=True,
@@ -60,46 +69,59 @@ disease = st.sidebar.radio("Select a disease", labels)
 disease_info = {
     "Black spot": {
         "image": "black_spot.jpg",
-        "about": "Black spot is a fungal disease that creates dark circular lesions on citrus leaves, stems, and fruits. It reduces photosynthesis, weakens the plant, and makes fruits less marketable.",
-        "solution": "Apply copper-based fungicides at early stages. Remove and destroy infected leaves and fruits. Improve air circulation by pruning dense foliage."
+        "about": "Black spot causes dark circular lesions on leaves and fruits.",
+        "solution": "Spray copper-based fungicides and remove infected leaves."
     },
     "Canker": {
         "image": "canker.jpg",
-        "about": "Citrus canker is a bacterial disease causing raised, corky lesions surrounded by yellow halos. It spreads rapidly via wind, rain, and contaminated tools.",
-        "solution": "Remove and destroy infected plant material. Spray preventive copper-based bactericides. Ensure strict sanitation of tools and equipment."
+        "about": "Citrus canker creates raised corky lesions with yellow halos.",
+        "solution": "Use copper sprays and remove infected plant parts."
     },
     "Melanose": {
         "image": "melanose.jpg",
-        "about": "Melanose is a fungal disease mostly affecting older leaves and twigs. It causes small, brown, raised spots that reduce fruit quality.",
-        "solution": "Remove dead twigs where the fungus survives. Use fungicidal sprays during wet seasons. Keep orchards clean from fallen leaves and debris."
+        "about": "Melanose causes small dark spots, mostly on old leaves.",
+        "solution": "Remove dead branches and apply fungicide if needed."
     },
     "Greening": {
         "image": "greening.jpg",
-        "about": "Citrus greening (HLB) is one of the most serious citrus diseases. It causes yellow shoots, mottled leaves, green but bitter fruits, and tree decline.",
-        "solution": "Control psyllid insects that transmit HLB using insecticides. Remove infected trees immediately. Use certified disease-free planting material."
+        "about": "Greening leads to mottled leaves, bitter fruit, and decline.",
+        "solution": "Remove infected trees and control psyllid vectors."
     },
     "Healthy": {
         "image": "healthy.jpg",
-        "about": "The leaf shows no visible signs of disease, maintaining normal shape, size, and color. Photosynthesis and plant growth are optimal.",
-        "solution": "Maintain good orchard hygiene, ensure balanced fertilization, and monitor regularly for any early signs of disease."
+        "about": "Leaf is disease-free with optimal growth.",
+        "solution": "Maintain hygiene and proper fertilization."
     }
 }
 
-# Show disease image + info
 if disease in disease_info:
-    st.sidebar.image(disease_info[disease]["image"], caption=f"{disease} Example", use_column_width=True)
-    st.sidebar.markdown(f"### 🌱 About:\n{disease_info[disease]['about']}")
-    st.sidebar.markdown(f"### 💡 Solution:\n{disease_info[disease]['solution']}")
+    st.sidebar.image(disease_info[disease]["image"], caption=f"{disease} Example", use_container_width=True)
+    st.sidebar.markdown(f"<p class='disease-text'><b>🌱 About:</b> {disease_info[disease]['about']}</p>", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<p class='disease-text'><b>💡 Solution:</b> {disease_info[disease]['solution']}</p>", unsafe_allow_html=True)
 
-# ---------------- UPLOAD + PREDICTION ----------------
+# ---------------- UPLOAD + PREDICT ----------------
 uploaded_file = st.file_uploader("📤 Upload a Citrus Leaf Image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     img = image.load_img(uploaded_file, target_size=(224, 224))
-    st.image(uploaded_file, caption="Uploaded Image", use_column_width=False, width=350)
+    st.image(uploaded_file, caption="Uploaded Image", width=300)   # FIXED: use_container_width removed
 
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = x / 255.0
 
-   
+    prediction = model.predict(x)
+    class_index = np.argmax(prediction)
+    confidence = round(np.max(prediction) * 100, 2)
+
+    st.markdown(
+        f"""
+        <div style="background:rgba(0,0,0,0.6); padding:15px; border-radius:10px; 
+        text-align:center; color:#00ffcc; font-size:20px; font-weight:bold;
+        text-shadow: 0 0 10px #39ff14;">
+        ✅ Prediction: {labels[class_index]} <br>
+        🔥 Confidence: {confidence}%
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
