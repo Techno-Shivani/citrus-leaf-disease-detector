@@ -53,7 +53,7 @@ st.markdown("""
 # --------------------------
 @st.cache_resource
 def load_model_and_labels():
-    model = tf.keras.models.load_model("citrus_model_retrained.zip", compile=False)
+model = tf.keras.models.load_model("citrus_model_retrained.keras", compile=False)
     with open("class_labels.txt", "r") as f:
         labels = [line.strip() for line in f.readlines()]
     return model, labels
